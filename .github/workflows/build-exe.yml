@@ -1,0 +1,32 @@
+name: Build SLMic.exe
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run DSP tests
+        run: python tests_dsp.py
+
+      - name: Build exe
+        run: pyinstaller --noconfirm --onefile --windowed --name SLMic --collect-all pyrnnoise run_slmic.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SLMic-windows
+          path: dist/SLMic.exe
