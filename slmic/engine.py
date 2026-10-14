@@ -7,9 +7,16 @@ import threading
 
 import numpy as np
 
+<<<<<<< HEAD
 from .dsp import VoicePipeline, BLOCK
 
 SAMPLE_RATE = 48000
+=======
+from .dsp import VoicePipeline
+
+SAMPLE_RATE = 48000
+BLOCK = 256
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
 
 
 def list_devices():
@@ -89,3 +96,15 @@ class AudioEngine:
         self.running = False
         self.in_level_db = -120.0
         self.out_level_db = -120.0
+<<<<<<< HEAD
+=======
+
+    def learn_noise(self, seconds=2.0):
+        """Ask the user to stay silent; the NR learns the room noise."""
+        with self.lock:
+            self.pipeline.nr.start_learning(seconds, SAMPLE_RATE)
+
+    @property
+    def learning(self):
+        return self.pipeline.nr.learning
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c

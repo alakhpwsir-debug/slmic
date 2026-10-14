@@ -80,7 +80,11 @@ class SLMicApp(tk.Tk):
 
         # --- sliders
         sl = self._panel("Tuning")
+<<<<<<< HEAD
         self.nr_var = self._slider(sl, "Noise removal (AI)", 0, 1.0, 1.0, self._on_nr)
+=======
+        self.nr_var = self._slider(sl, "Noise reduction", 0, 2.0, 1.0, self._on_nr)
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
         self.gate_var = self._slider(sl, "Noise gate threshold (dB)", -70, -20, -48,
                                      self._on_gate)
         self.pres_var = self._slider(sl, "Presence / clarity (dB)", 0, 8, 4, self._on_pres)
@@ -96,6 +100,10 @@ class SLMicApp(tk.Tk):
         btns.pack(fill="x", padx=20, pady=12)
         self.start_btn = self._button(btns, "▶  Start", ACCENT, self._toggle)
         self.start_btn.pack(side="left", fill="x", expand=True, padx=(0, 8))
+<<<<<<< HEAD
+=======
+        self._button(btns, "Learn room noise", PANEL, self._learn).pack(side="left", fill="x", expand=True, padx=4)
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
         tk.Checkbutton(btns, text="Bypass (compare)", variable=self.bypass_var,
                        command=self._on_bypass, bg=BG, fg=TEXT, selectcolor=PANEL,
                        activebackground=BG, activeforeground=TEXT,
@@ -200,6 +208,17 @@ class SLMicApp(tk.Tk):
         self.start_btn.config(text="■  Stop", bg=BAD)
         self.status.config(text="● Live", fg=GOOD)
 
+<<<<<<< HEAD
+=======
+    def _learn(self):
+        if not self.engine.running:
+            messagebox.showinfo("SLMic", "Press Start first, then learn the room noise.")
+            return
+        self.hint.config(text="Learning room noise... stay quiet for 2 seconds.", fg=GOOD)
+        self.engine.learn_noise(2.0)
+        self.after(2500, lambda: self.hint.config(text="Room noise learned.", fg=GOOD))
+
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
     def _apply_preset(self):
         p = PRESETS[self.preset_var.get()]
         self.nr_var.set(p["nr"]); self.gate_var.set(p["gate_db"])
@@ -208,13 +227,21 @@ class SLMicApp(tk.Tk):
 
     def _apply_sliders(self):
         pl = self.engine.pipeline
+<<<<<<< HEAD
         pl.noise_mix = self.nr_var.get()
+=======
+        pl.nr.set_strength(self.nr_var.get())
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
         pl.gate.threshold_db = self.gate_var.get()
         from .dsp import Biquad
         pl.presence = Biquad.peaking(pl.sr, 3000.0, self.pres_var.get(), q=0.9)
         pl.output_gain = db_to_lin(self.gain_var.get())
 
+<<<<<<< HEAD
     def _on_nr(self):   self.engine.pipeline.noise_mix = self.nr_var.get()
+=======
+    def _on_nr(self):   self.engine.pipeline.nr.set_strength(self.nr_var.get())
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
     def _on_gate(self): self.engine.pipeline.gate.threshold_db = self.gate_var.get()
     def _on_pres(self):
         from .dsp import Biquad

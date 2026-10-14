@@ -53,6 +53,80 @@ class Biquad:
         return Biquad(np.array(b) / a[0], np.array(a) / a[0])
 
 
+<<<<<<< HEAD
+=======
+# ------------------------------------------------------ noise reduction
+
+class SpectralNoiseReducer:
+    """
+    Streaming spectral subtraction with overlap-add.
+    - Frame 512 / hop = block size (256) with sine window (COLA with 50% overlap).
+    - Noise spectrum is learned automatically from quiet moments, and can be
+      trained explicitly with `start_learning()` (user stays silent for ~2 s).
+    """
+
+    def __init__(self, block=256, frame=512):
+        assert frame == 2 * block, "frame must be 2x block for 50% overlap"
+        self.H = block
+        self.N = frame
+        self.win = np.sin(np.pi * np.arange(frame) / frame)  # sqrt-Hann
+        self.in_buf = np.zeros(frame)
+        self.out_buf = np.zeros(frame)
+        self.noise = None           # per-bin noise power estimate
+        self.strength = 1.0         # oversubtraction factor (0..~2)
+        self.floor = 0.08           # minimum gain (~ -22 dB), avoids "watery" artifacts
+        self._learn_left = 0
+        self._learn_total = 1
+        self._learn_acc = None
+
+    def set_strength(self, strength):
+        self.strength = float(strength)
+
+    def start_learning(self, seconds, sr):
+        self._learn_total = max(1, int(seconds * sr / self.H))
+        self._learn_left = self._learn_total
+        self._learn_acc = None
+
+    @property
+    def learning(self):
+        return self._learn_left > 0
+
+    def process(self, x):
+        self.in_buf = np.concatenate([self.in_buf[self.H:], x])
+        X = np.fft.rfft(self.in_buf * self.win)
+        pow_ = np.abs(X) ** 2
+
+        if self.noise is None:
+            self.noise = pow_.copy()
+
+        if self._learn_left > 0:
+            # Explicit calibration: average the spectrum of the silent period.
+            self._learn_acc = pow_ if self._learn_acc is None else self._learn_acc + pow_
+            self._learn_left -= 1
+            if self._learn_left == 0:
+                self.noise = self._learn_acc / self._learn_total
+        else:
+            # Continuous tracking, frame-level: if this frame's total energy is
+            # close to the noise floor, it's background -> update the noise
+            # estimate from the whole spectrum (unbiased). Otherwise (speech)
+            # let the estimate creep up very slowly.
+            if pow_.sum() < 1.5 * self.noise.sum():
+                self.noise = 0.98 * self.noise + 0.02 * pow_
+            else:
+                self.noise = self.noise * 1.0002
+
+        snr_inv = self.strength * self.noise / (pow_ + 1e-12)
+        gain = np.clip(1.0 - snr_inv, self.floor, 1.0)
+        Y = X * np.sqrt(gain)  # apply gain to magnitude, keep phase
+        y = np.fft.irfft(Y, self.N) * self.win
+
+        self.out_buf += y
+        out = self.out_buf[:self.H].copy()
+        self.out_buf = np.concatenate([self.out_buf[self.H:], np.zeros(self.H)])
+        return out
+
+
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
 class NoiseGate:
     """Block-wise gate with hysteresis and smooth open/close."""
 
@@ -109,6 +183,7 @@ def soft_limit(x, ceiling=0.89):
 # --------------------------------------------------------------- pipeline
 
 PRESETS = {
+<<<<<<< HEAD
     "Pro Mic": dict(nr=1.0, gate_db=-42, presence_db=4.0, mud_db=-3.0,
                     air_db=2.0, comp_ratio=3.0, comp_db=-22, makeup_db=4.0),
     "Gaming":  dict(nr=1.0, gate_db=-38, presence_db=3.0, mud_db=-2.0,
@@ -126,14 +201,32 @@ class VoicePipeline:
     def __init__(self, sr=48000, block=BLOCK, preset="Pro Mic"):
         from .rnnoise_wrap import RNNoiseDenoiser
         assert block == BLOCK and sr == 48000, "RNNoise requires 48 kHz and 480-sample blocks"
+=======
+    "Pro Mic": dict(nr=1.0, gate_db=-48, presence_db=4.0, mud_db=-3.0,
+                    air_db=2.0, comp_ratio=3.0, comp_db=-22, makeup_db=6.0),
+    "Gaming":  dict(nr=1.3, gate_db=-42, presence_db=3.0, mud_db=-2.0,
+                    air_db=1.0, comp_ratio=2.5, comp_db=-20, makeup_db=5.0),
+    "Light":   dict(nr=0.6, gate_db=-55, presence_db=2.0, mud_db=-1.5,
+                    air_db=1.0, comp_ratio=2.0, comp_db=-26, makeup_db=3.0),
+}
+
+
+class VoicePipeline:
+    def __init__(self, sr=48000, block=256, preset="Pro Mic"):
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
         self.sr = sr
         self.block = block
         self.bypass = False
         self.input_gain = 1.0
         self.output_gain = 1.0
+<<<<<<< HEAD
         self.denoiser = RNNoiseDenoiser()
         self.noise_mix = 1.0           # 0 = no removal, 1 = full removal
         self.hpf = Biquad.highpass(sr, 80.0)
+=======
+        self.hpf = Biquad.highpass(sr, 90.0)
+        self.nr = SpectralNoiseReducer(block)
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
         self.mud = Biquad.peaking(sr, 250.0, -3.0, q=1.0)
         self.presence = Biquad.peaking(sr, 3000.0, 4.0, q=0.9)
         self.air = Biquad.peaking(sr, 10000.0, 2.0, q=0.7)
@@ -144,7 +237,11 @@ class VoicePipeline:
 
     def apply_preset(self, name):
         p = PRESETS[name]
+<<<<<<< HEAD
         self.noise_mix = p["nr"]
+=======
+        self.nr.set_strength(p["nr"])
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
         self.gate.threshold_db = p["gate_db"]
         self.presence = Biquad.peaking(self.sr, 3000.0, p["presence_db"], q=0.9)
         self.mud = Biquad.peaking(self.sr, 250.0, p["mud_db"], q=1.0)
@@ -154,15 +251,23 @@ class VoicePipeline:
         self.comp.makeup = db_to_lin(p["makeup_db"])
 
     def process(self, x):
+<<<<<<< HEAD
         """x: float32 mono block of BLOCK samples -> processed block."""
+=======
+        """x: float32 mono block of exactly `block` samples -> processed block."""
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
         x = x.astype(np.float64) * self.input_gain
         if self.bypass:
             y = x
         else:
             y = self.hpf.process(x)
+<<<<<<< HEAD
             den = self.denoiser.process(y.astype(np.float32)).astype(np.float64)
             m = float(np.clip(self.noise_mix, 0.0, 1.0))
             y = m * den + (1.0 - m) * y           # wet/dry mix
+=======
+            y = self.nr.process(y)
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
             y = self.mud.process(y)
             y = self.presence.process(y)
             y = self.air.process(y)

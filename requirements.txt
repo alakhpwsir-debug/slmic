@@ -1,5 +1,8 @@
 numpy>=1.26
+<<<<<<< HEAD
 pyrnnoise==0.4.5
+=======
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
 scipy>=1.11
 sounddevice>=0.4.6
 pyinstaller>=6.0

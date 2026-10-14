@@ -7,7 +7,11 @@ background noise. Use it in Discord, OBS, or any app that asks for a microphone.
 
 Your real mic → **SLMic** (cleans the voice) → **VB-CABLE virtual mic** → Discord / OBS
 
+<<<<<<< HEAD
 Processing chain: high-pass filter (removes rumble) → RNNoise AI noise removal → EQ (less mud,
+=======
+Processing chain: high-pass filter (removes rumble) → noise reduction → EQ (less mud,
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
 more presence) → noise gate (silences you when you're not talking) → compressor
 (evens out loudness) → limiter (never clips).
 
@@ -20,13 +24,21 @@ more presence) → noise gate (silences you when you're not talking) → compres
    - **Microphone (input):** your laptop mic.
    - **Send to (output):** `CABLE Input (VB-Audio Virtual Cable)`.
    - Click **Start**.
+<<<<<<< HEAD
+=======
+   - Click **Learn room noise** and stay quiet for 2 seconds (optional, but helps a lot).
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
 4. In **Discord**: Settings → Voice & Video → Input Device → **CABLE Output (VB-Audio Virtual Cable)**.
    In **OBS**: Settings → Audio → Mic/Auxiliary → **CABLE Output**.
    (Discord: turn off *Noise Suppression* and *Echo Cancellation* so you don't process it twice.)
 
 ### Tuning
 - **Preset:** Pro Mic (default), Gaming (stronger cleanup), Light (gentle).
+<<<<<<< HEAD
 - **Noise removal (AI):** RNNoise neural network. 100% is full removal; lower it if voice sounds thin.
+=======
+- **Noise reduction:** higher = less background hiss, but voice can sound "watery" if pushed too far.
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
 - **Noise gate:** raise it (toward -30 dB) if background noise leaks in between words; lower it if your quiet words get cut.
 - **Presence:** adds clarity and "radio-voice" sparkle.
 - **Bypass:** hear the raw mic to compare.
@@ -42,7 +54,11 @@ python run_slmic.py
 
 Build the exe locally:
 ```
+<<<<<<< HEAD
 pyinstaller --noconfirm --onefile --windowed --name SLMic --collect-all pyrnnoise run_slmic.py
+=======
+pyinstaller --noconfirm --onefile --windowed --name SLMic run_slmic.py
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
 ```
 The exe appears in `dist/SLMic.exe`. The GitHub Actions workflow in `.github/workflows/build-exe.yml`
 does the same thing on every push to `main` and uploads the exe as a downloadable artifact.
@@ -51,8 +67,12 @@ does the same thing on every push to `main` and uploads the exe as a downloadabl
 
 ```
 run_slmic.py              entry point (used by PyInstaller)
+<<<<<<< HEAD
 slmic/dsp.py              audio processing (EQ, gate, compressor, limiter, mix)
 slmic/rnnoise_wrap.py     RNNoise AI noise suppression wrapper
+=======
+slmic/dsp.py              audio processing (noise reduction, EQ, gate, compressor)
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
 slmic/engine.py           real-time audio I/O (sounddevice)
 slmic/app.py              the SLMic window (tkinter)
 tests_dsp.py              DSP sanity tests (run in CI)
@@ -60,6 +80,11 @@ tests_dsp.py              DSP sanity tests (run in CI)
 ```
 
 ## Known limits
+<<<<<<< HEAD
 - Very loud background speech (other people talking) is only partly removed.
 - Latency is roughly 10–20 ms plus driver latency.
+=======
+- Works best on a quiet-ish room. Heavy, changing noise (typing, fans) is reduced but not removed perfectly.
+- Latency is roughly 20–30 ms plus driver latency.
+>>>>>>> aab166f36584cbffe1c31f6901de4cf3c635fb6c
 - Virtual mic depends on VB-CABLE. SLMic does not install its own audio driver.
